@@ -2,15 +2,27 @@ package org.zembos.procon.service;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.io.ByteArrayInputStream;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 
 @ExtendWith(MockitoExtension.class)
 public class CommandTranslatorServiceTest {
+
+    private static Stream<Arguments> provideInvalidArguments() {
+        return Stream.of(
+                Arguments.of("invalidCommand"),
+                Arguments.of("Add (invalidNumber, \"guid12\", \"Miso\")"),
+                Arguments.of("Add (1, \"guid12\", \"Miso\", \"oneMoreArg\")")
+        );
+    }
 
     CommandProducerService commandProducerService = Mockito.mock(CommandProducerService.class);
 
@@ -24,21 +36,10 @@ public class CommandTranslatorServiceTest {
         Mockito.verify(commandProducerService, Mockito.times(3)).produceCommand(any());
     }
 
-    @Test
-    void testInvalidCommandListenCommands() {
-        commandTranslatorService.listenCommands(new ByteArrayInputStream("invalidCommand".getBytes()));
-        Mockito.verifyNoInteractions(commandProducerService);
-    }
-
-    @Test
-    void testInvalidNumberCommandArgumentListenCommands() {
-        commandTranslatorService.listenCommands(new ByteArrayInputStream("Add (invalidNumber, \"guid12\", \"Miso\")".getBytes()));
-        Mockito.verifyNoInteractions(commandProducerService);
-    }
-
-    @Test
-    void testInvalidNumOfArgsCommandArgumentListenCommands() {
-        commandTranslatorService.listenCommands(new ByteArrayInputStream("Add (1, \"guid12\", \"Miso\", \"oneMoreArg\")".getBytes()));
+    @ParameterizedTest
+    @MethodSource("provideInvalidArguments")
+    void testInvalidCommandAndArgumentsListenCommands(String testCommand) {
+        commandTranslatorService.listenCommands(new ByteArrayInputStream(testCommand.getBytes()));
         Mockito.verifyNoInteractions(commandProducerService);
     }
 }
